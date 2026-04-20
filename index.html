@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>AIR CANVAS — Bahaa Mohammed</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- MediaPipe CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+  <!-- ── Start overlay ─────────────────────────────────────────────────────── -->
+  <div id="startOverlay">
+    <div class="overlay-inner">
+      <h1 class="overlay-title">AIR CANVAS</h1>
+      <p class="overlay-sub">Draw in the air with your hand · by Bahaa Mohammed</p>
+
+      <div class="gesture-grid">
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="pencil"></i></span>
+          <span>Pinch → Draw</span>
+        </div>
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="eraser"></i></span>
+          <span>Peace sign → Eraser</span>
+        </div>
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="thumbs-up"></i></span>
+          <span>Thumb up → Next brush</span>
+        </div>
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="undo-2"></i></span>
+          <span>Fist (hold) → Undo</span>
+        </div>
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="flip-horizontal-2"></i></span>
+          <span>Rock on → Symmetry</span>
+        </div>
+        <div class="gesture-card">
+          <span class="g-icon"><i data-lucide="keyboard"></i></span>
+          <span>Ctrl+Z / Ctrl+Y → Undo/Redo</span>
+        </div>
+      </div>
+
+      <button class="start-btn" id="startBtn" type="button">Start Drawing</button>
+      <p class="overlay-hint">Allow camera access when prompted</p>
+    </div>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────────────────────── -->
+  <div id="toast"></div>
+
+  <!-- ── Canvas layers ─────────────────────────────────────────────────────── -->
+  <div class="video-container">
+    <video class="input_video" autoplay playsinline></video>
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="drawCanvas"></canvas>
+    <canvas id="skeletonCanvas"></canvas>
+    <canvas id="cursorCanvas"></canvas>
+  </div>
+
+  <!-- ── Left panel ────────────────────────────────────────────────────────── -->
+  <div id="leftPanel" class="hidden">
+
+    <div class="panel-section stats-section">
+      <div class="stat-row"><span class="stat-label">Hands</span><span class="val" id="ui-hands">0</span></div>
+      <div class="stat-row"><span class="stat-label">FPS</span><span class="val" id="ui-fps">0</span></div>
+      <div class="stat-row"><span class="stat-label">Pen</span><span class="val" id="ui-pen">UP</span></div>
+      <div class="stat-row gesture-row">
+        <span class="stat-label">Gesture</span>
+        <span class="val gesture-val" id="ui-gesture">None</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tool -->
+    <div class="panel-section">
+      <div class="panel-label">Tool — <span id="ui-tool">pencil</span></div>
+      <div class="tool-group">
+        <button class="tool-btn active" data-tool="pencil" title="Pencil (1)">
+          <i data-lucide="pencil"></i><span class="tool-key">1</span>
+        </button>
+        <button class="tool-btn" data-tool="marker" title="Marker (2)">
+          <i data-lucide="pen-tool"></i><span class="tool-key">2</span>
+        </button>
+        <button class="tool-btn" data-tool="neon" title="Neon Glow (3)">
+          <i data-lucide="sparkles"></i><span class="tool-key">3</span>
+        </button>
+        <button class="tool-btn" data-tool="spray" title="Spray (4)">
+          <i data-lucide="droplets"></i><span class="tool-key">4</span>
+        </button>
+        <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
+          <i data-lucide="eraser"></i><span class="tool-key">E</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Size -->
+    <div class="panel-section">
+      <div class="panel-label">Size — <span id="brushSizeVal">8</span>px</div>
+      <input type="range" id="brushSize" min="2" max="40" value="8" step="1" />
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Color -->
+    <div class="panel-section">
+      <div class="panel-label">Color</div>
+      <div class="color-row">
+        <input type="color" id="colorPicker" value="#00ffcc" title="Pick color" />
+        <div id="recentColors" class="recent-colors"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Palette -->
+    <div class="panel-section">
+      <div class="panel-label">Palette</div>
+      <div class="palette-preset-group">
+        <button class="palette-btn active" data-palette="Neon">Neon</button>
+        <button class="palette-btn" data-palette="Cyber">Cyber</button>
+        <button class="palette-btn" data-palette="Pastel">Pastel</button>
+        <button class="palette-btn" data-palette="Gray">Gray</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Theme + Symmetry -->
+    <div class="panel-section btn-row">
+      <button class="half-btn" id="canvasThemeBtn" title="Toggle canvas brightness">
+        <i data-lucide="moon" id="themeIcon"></i>
+        <span id="themeLabel">Dark</span>
+      </button>
+      <button class="half-btn" id="symmetryBtn" title="Mirror drawing (S key)">
+        <i data-lucide="flip-horizontal-2"></i>
+        <span>Mirror</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Gesture guide -->
+    <div class="panel-section">
+      <details class="gesture-guide">
+        <summary class="panel-label guide-summary">
+          <i data-lucide="chevron-right" class="guide-chevron"></i>
+          Gesture Guide
+        </summary>
+        <div class="gesture-list">
+          <div class="g-row"><i data-lucide="pencil"></i> Pinch → Draw</div>
+          <div class="g-row"><i data-lucide="eraser"></i> Peace → Eraser</div>
+          <div class="g-row"><i data-lucide="thumbs-up"></i> Thumb up → Brush</div>
+          <div class="g-row"><i data-lucide="undo-2"></i> Fist → Undo</div>
+          <div class="g-row"><i data-lucide="flip-horizontal-2"></i> Rock on → Symmetry</div>
+        </div>
+      </details>
+    </div>
+
+  </div>
+
+  <!-- ── Swatch bar ─────────────────────────────────────────────────────────── -->
+  <div id="swatchBar" class="hidden">
+    <div id="swatches"></div>
+  </div>
+
+  <!-- ── Action bar ─────────────────────────────────────────────────────────── -->
+  <div id="actionBar" class="hidden">
+    <button class="action-btn" id="screenshotBtn" title="Screenshot (PNG)">
+      <i data-lucide="camera"></i>
+    </button>
+    <button class="action-btn" id="recordBtn" title="Record video">
+      <i data-lucide="circle" id="recordIcon"></i>
+    </button>
+    <button class="action-btn" id="undoBtn" title="Undo (Ctrl+Z)">
+      <i data-lucide="undo-2"></i>
+    </button>
+    <button class="action-btn" id="redoBtn" title="Redo (Ctrl+Y)">
+      <i data-lucide="redo-2"></i>
+    </button>
+    <button class="action-btn" id="clearBtn" title="Clear canvas">
+      <i data-lucide="trash-2"></i>
+    </button>
+  </div>
+
+  <!-- ── Camera toggle ──────────────────────────────────────────────────────── -->
+  <button class="action-btn" id="cameraToggle" title="Switch camera">
+    <i data-lucide="refresh-cw"></i>
+  </button>
+
+  <!-- ── Credit ────────────────────────────────────────────────────────────── -->
+  <div id="credit">
+    <a href="https://ibahaaaldin.github.io" target="_blank" rel="noopener" title="Portfolio">
+      <i data-lucide="globe"></i> Bahaa Mohammed
+    </a>
+    <span class="credit-sep">·</span>
+    <a href="https://github.com/IBahaaaldin" target="_blank" rel="noopener" title="GitHub">
+      <i data-lucide="github"></i>
+    </a>
+    <span class="credit-sep">·</span>
+    <a href="https://www.linkedin.com/in/ibahaaaldin" target="_blank" rel="noopener" title="LinkedIn">
+      <i data-lucide="linkedin"></i>
+    </a>
+  </div>
+
+  <script>
+    // Init all static icons before the module loads
+    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
