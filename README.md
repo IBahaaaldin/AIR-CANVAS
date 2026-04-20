@@ -53,3 +53,4 @@ Vanilla HTML/CSS/JS — no build step, no dependencies.
 - Portfolio: [ibahaaaldin.github.io](https://ibahaaaldin.github.io)
 - GitHub: [@IBahaaaldin](https://github.com/IBahaaaldin)
 - LinkedIn: [ibahaaaldin](https://www.linkedin.com/in/ibahaaaldin)
+- Instagram: [@ibahaaaldincoding](https://www.instagram.com/ibahaaaldincoding)
